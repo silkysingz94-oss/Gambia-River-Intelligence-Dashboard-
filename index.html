@@ -3,17 +3,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GBoS GEOAI | Gambia River Intelligence</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--navy:#10283f;--blue:#087bd0;--cyan:#55d5ff;--bg:#f1f5f9;--border:#dbe4ec;--muted:#687d91}
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;color:#203247;background:var(--bg)}
+html,body{margin:0;width:100%;height:100%;font-family:Arial,Helvetica,sans-serif;color:#203247;background:var(--bg)}
 body{overflow:hidden}
 button,input,select{font:inherit}
 .app{height:100vh;display:flex;flex-direction:column}
-header{background:var(--navy);color:white;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header{background:var(--navy);color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px}
 .logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#22d3ee,#1478ce);display:grid;place-items:center;font-size:21px;font-weight:bold}
 h1{font-size:17px;margin:0 0 4px}
@@ -25,9 +25,10 @@ header p{margin:0;font-size:11px;color:#d0dfec}
 .section{border-top:1px solid var(--border);padding-top:12px;margin-top:12px}
 .section h3{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:0 0 8px}
 label{display:block;font-size:12px;font-weight:bold;margin:9px 0 5px}
-input,select{width:100%;padding:9px;border:1px solid #cad6e1;border-radius:7px;background:white;min-height:36px}
+input,select{width:100%;padding:9px;border:1px solid #cad6e1;border-radius:7px;background:#fff;min-height:36px}
 button{border:0;border-radius:7px;padding:10px;cursor:pointer;font-weight:bold}
-.primary{background:#1689dc;color:white}
+button:focus,input:focus,select:focus{outline:2px solid #1689dc55;outline-offset:1px}
+.primary{background:#1689dc;color:#fff}
 .secondary{background:#eaf1f7;color:#203247;border:1px solid #d8e2eb}
 .btnrow{display:flex;gap:7px;margin-top:9px}
 .btnrow button{flex:1}
@@ -50,9 +51,11 @@ button{border:0;border-radius:7px;padding:10px;cursor:pointer;font-weight:bold}
 .track{height:8px;border-radius:9px;background:#e5edf4;overflow:hidden;margin:9px 0}
 .bar{height:100%;width:0;background:linear-gradient(90deg,#087bd0,#55d5ff)}
 .reading{font-size:12px;line-height:1.7}
-footer{background:white;border-top:1px solid var(--border);padding:8px 13px;font-size:10px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#loadStatus{font-size:11px;line-height:1.5;color:#687d91;overflow-wrap:anywhere}
+.timeline-wrap{height:225px;width:100%;position:relative}
+#waveTimeline{display:block;width:100%;height:100%}
+footer{background:#fff;border-top:1px solid var(--border);padding:8px 13px;font-size:10px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 footer strong{color:var(--navy)}
-#loadStatus{font-size:11px;line-height:1.5;color:#7b5a13}
 @media(max-width:950px){body{overflow:auto}.app{height:auto;min-height:100vh}.workspace{grid-template-columns:1fr 1.3fr;grid-template-rows:minmax(440px,60vh) auto}.map-panel{grid-column:2;grid-row:1 / span 2}}
 @media(max-width:650px){.workspace{display:flex;flex-direction:column}.map-panel{order:1;height:62vh;min-height:420px}.controls{order:2}.analytics{order:3}header{padding:12px}}
 </style>
@@ -90,10 +93,10 @@ footer strong{color:var(--navy)}
 
     <div class="section">
       <h3>River line data</h3>
-      <p class="hint">The app requests a digitized major-rivers line feature and searches its attributes for the Gambia River.</p>
+      <p class="hint">The dashboard attempts to load a digitized river feature from an external service.</p>
       <button class="primary" id="reloadRiver" style="width:100%">Reload river geometry</button>
       <p id="loadStatus">Waiting for river data…</p>
-      <p class="hint">If the source returns only a coarse line, use a detailed verified centreline GeoJSON for exact local meanders.</p>
+      <p class="hint">A generalized line may not represent every small bend. Use a verified high-resolution river centreline GeoJSON for detailed meanders.</p>
     </div>
 
     <div class="section">
@@ -115,7 +118,7 @@ footer strong{color:var(--navy)}
         <button class="primary" id="play">Pause animation</button>
         <button class="secondary" id="reset">Reset view</button>
       </div>
-      <p class="hint">Markers are illustrative moving symbols, not measured water movement.</p>
+      <p class="hint">Markers are illustrative symbols, not measured water movement.</p>
     </div>
 
     <div class="section">
@@ -123,19 +126,19 @@ footer strong{color:var(--navy)}
       <label for="level">Water level (m)</label>
       <input id="level" type="number" min="0" step=".01" placeholder="Enter verified reading">
       <label for="discharge">Discharge (m³/s)</label>
-      <input id="discharge" type="number" min="0" step="1" placeholder="Enter verified reading">
+      <input id="discharge" type="number" min="0" step="1" placeholder="Enter verified discharge">
       <div class="btnrow">
         <button class="primary" id="apply">Apply readings</button>
         <button class="secondary" id="clear">Clear</button>
       </div>
-      <p class="hint">No live gauge data are connected. Enter readings only from a trusted source and record their station and timestamp separately.</p>
+      <p class="hint">No live gauge data are connected. Use readings from a trusted source.</p>
     </div>
 
     <div class="section">
       <h3>Timeline index</h3>
       <label for="timeline">Timeline day</label>
       <input id="timeline" type="range" min="1" max="336" value="336">
-      <p class="hint">This is a dashboard index, not a real date or observed time series.</p>
+      <p class="hint">This is an illustrative dashboard index, not a real date or observation time series.</p>
     </div>
 
     <div class="section">
@@ -160,7 +163,7 @@ footer strong{color:var(--navy)}
 
   <aside class="panel analytics">
     <h2>River Analytics</h2>
-    <div class="notice"><strong>Illustrative values only • Not for flood warnings</strong><br>Speed and relative intensity are demonstration values, not measured hydrological observations.</div>
+    <div class="notice"><strong>Illustrative values only • Not for flood warnings</strong><br>Speed and relative intensity are examples, not measurements or forecasts.</div>
 
     <div class="section" style="border-top:0">
       <h3>Key indicators</h3>
@@ -199,6 +202,19 @@ footer strong{color:var(--navy)}
       </div>
     </div>
 
+    <!-- WAVE TIMELINE CANVAS -->
+    <div class="section">
+      <h3>Wave timeline · illustrative</h3>
+      <div style="font-size:12px;font-weight:600;margin-bottom:8px">
+        Conceptual river-distance versus time
+      </div>
+      <div class="timeline-wrap">
+        <canvas id="waveTimeline" role="img"
+          aria-label="Conceptual river-distance versus time chart with illustrative diagonal wave bands"></canvas>
+      </div>
+      <p class="hint">Diagonal bands are generated for demonstration and do not represent recorded flood events, observed water levels, or forecasts.</p>
+    </div>
+
     <div class="section">
       <h3>Entered observations</h3>
       <div class="metrics">
@@ -221,17 +237,17 @@ footer strong{color:var(--navy)}
       <div class="legend"><span class="line halo"></span>River highlight</div>
       <div class="legend"><span class="line"></span>River centreline from dataset</div>
       <div class="legend"><span class="dot"></span>Illustrative moving marker</div>
-      <div class="legend"><span style="width:27px;border-top:2px dashed #6b8195"></span>Not an administrative boundary</div>
+      <div class="legend"><span style="width:27px;border-top:2px dashed #6b8195"></span>Conceptual boundary only, if supplied by source</div>
     </div>
 
     <div class="section">
       <h3>Methodology and limitations</h3>
-      <p class="hint">The route is loaded from a remote digitized major-rivers service. Dataset scale determines how precisely small bends are represented. The distance shown is calculated along the loaded line and is not an official river chainage. Use a validated detailed centreline for exact meanders and operational measurement.</p>
+      <p class="hint">River geometry is requested from a remote service. Its scale determines how accurately small meanders are represented. The displayed distance is calculated along the loaded line and is not official river chainage. Use a validated high-resolution centreline for precise measurements.</p>
     </div>
 
     <div class="section">
       <h3>Credits</h3>
-      <p class="hint"><strong>Produced by Ansu Singhateh</strong><br>GIS Analyst | GIS / Cartography Unit | GBoS<br>GBoS GEOAI • Research and educational use<br><br>Mapping: Leaflet. River geometry source: Major Africa Rivers service. Basemap attribution is shown on the map.</p>
+      <p class="hint"><strong>Produced by Ansu Singhateh</strong><br>GIS Analyst | GIS / Cartography Unit | GBoS<br>GBoS GEOAI • Research and educational use<br><br>Mapping: Leaflet. Basemap credits are shown on the map. Remote river-data service availability and terms apply.</p>
     </div>
   </aside>
 </main>
@@ -246,88 +262,100 @@ footer strong{color:var(--navy)}
 <script>
 "use strict";
 
+// ------------------------------------------------------------
+// MAP AND BASEMAPS
+// ------------------------------------------------------------
 const map = L.map("map").setView([13.4,-14.5],6);
 
 const baseLayers = {
-  satellite: L.tileLayer(
+  satellite:L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    {maxZoom:19, attribution:"Tiles © Esri and its imagery providers"}
+    {maxZoom:19,attribution:"Tiles © Esri and its imagery providers"}
   ),
-  street: L.tileLayer(
+  street:L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    {maxZoom:19, attribution:"© OpenStreetMap contributors"}
+    {maxZoom:19,attribution:"© OpenStreetMap contributors"}
   ),
-  light: L.tileLayer(
+  light:L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-    {maxZoom:20, attribution:"© OpenStreetMap contributors © CARTO"}
+    {maxZoom:20,attribution:"© OpenStreetMap contributors © CARTO"}
   ),
-  dark: L.tileLayer(
+  dark:L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    {maxZoom:20, attribution:"© OpenStreetMap contributors © CARTO"}
+    {maxZoom:20,attribution:"© OpenStreetMap contributors © CARTO"}
   ),
-  topo: L.tileLayer(
+  topo:L.tileLayer(
     "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-    {maxZoom:17, attribution:"© OpenStreetMap contributors | © OpenTopoMap"}
+    {maxZoom:17,attribution:"© OpenStreetMap contributors | © OpenTopoMap"}
   ),
-  terrain: L.tileLayer(
+  terrain:L.tileLayer(
     "https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png",
-    {maxZoom:18, attribution:"© Stadia Maps © Stamen Design © OpenStreetMap contributors"}
+    {maxZoom:18,attribution:"© Stadia Maps © Stamen Design © OpenStreetMap contributors"}
   )
 };
 
-let activeBase = "satellite";
+let activeBase="satellite";
 baseLayers[activeBase].addTo(map);
-document.getElementById("basemap").addEventListener("change", function(){
+
+document.getElementById("basemap").addEventListener("change",function(){
   if(baseLayers[activeBase]) map.removeLayer(baseLayers[activeBase]);
-  activeBase = this.value;
+  activeBase=this.value;
   baseLayers[activeBase].addTo(map);
 });
 
-let riverLayer = null;
-let riverHalo = null;
-let waves = [];
-let lineLatLngs = [];
-let cumulative = [];
-let totalKm = 0;
-let running = true;
-let frameId = null;
-let previousTimestamp = 0;
-let elapsedMs = 0;
-let riverBounds = null;
-let estuaryPoint = null;
+// ------------------------------------------------------------
+// RIVER GEOMETRY
+// ------------------------------------------------------------
+let riverLayer=null;
+let riverHalo=null;
+let waves=[];
+let lineLatLngs=[];
+let cumulative=[];
+let totalKm=0;
+let running=false;
+let frameId=null;
+let previousTimestamp=0;
+let elapsedMs=0;
+let riverBounds=null;
+let estuaryPoint=null;
 
-const statusEl = document.getElementById("loadStatus");
-const headerStatus = document.getElementById("headerStatus");
+const statusEl=document.getElementById("loadStatus");
+const headerStatus=document.getElementById("headerStatus");
 
-function setStatus(message, isError=false){
-  statusEl.textContent = message;
-  statusEl.style.color = isError ? "#b42318" : "#687d91";
-  headerStatus.textContent = message;
+function setStatus(message,isError=false){
+  statusEl.textContent=message;
+  statusEl.style.color=isError?"#b42318":"#687d91";
+  headerStatus.textContent=message;
 }
 
 function haversineKm(a,b){
-  const rad = x => x*Math.PI/180;
-  const lat1=rad(a[0]), lat2=rad(b[0]);
-  const dLat=rad(b[0]-a[0]), dLon=rad(b[1]-a[1]);
+  const rad=x=>x*Math.PI/180;
+  const lat1=rad(a[0]),lat2=rad(b[0]);
+  const dLat=rad(b[0]-a[0]),dLon=rad(b[1]-a[1]);
   const h=Math.sin(dLat/2)**2+
     Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
   return 6371*2*Math.asin(Math.sqrt(Math.max(0,Math.min(1,h))));
 }
 
 function extractLines(geometry){
-  if(!geometry) return [];
-  if(geometry.type==="LineString") return [geometry.coordinates];
-  if(geometry.type==="MultiLineString") return geometry.coordinates;
-  if(geometry.type==="GeometryCollection"){
+  if(!geometry)return [];
+  if(geometry.type==="LineString")return [geometry.coordinates];
+  if(geometry.type==="MultiLineString")return geometry.coordinates;
+  if(geometry.type==="GeometryCollection")
     return geometry.geometries.flatMap(extractLines);
-  }
   return [];
 }
 
-function lineLength(coords){
+function cleanCoords(coords){
+  return coords.filter(p=>Array.isArray(p)&&
+    Number.isFinite(p[0])&&Number.isFinite(p[1])&&
+    Math.abs(p[0])<=180&&Math.abs(p[1])<=90);
+}
+
+function lengthOfLine(coords){
   let length=0;
   for(let i=1;i<coords.length;i++){
-    length += haversineKm(
+    length+=haversineKm(
       [coords[i-1][1],coords[i-1][0]],
       [coords[i][1],coords[i][0]]
     );
@@ -335,83 +363,72 @@ function lineLength(coords){
   return length;
 }
 
-function cleanCoords(coords){
-  return coords.filter(p => Array.isArray(p) &&
-    Number.isFinite(p[0]) && Number.isFinite(p[1]) &&
-    Math.abs(p[0])<=180 && Math.abs(p[1])<=90);
-}
-
-function getPropertiesText(feature){
-  return JSON.stringify(feature.properties || {}).toLowerCase();
+function featureText(feature){
+  return JSON.stringify(feature.properties||{}).toLowerCase();
 }
 
 function chooseGambiaFeature(collection){
-  const features = collection.features || [];
-  const candidates = features.filter(f => {
-    const text = getPropertiesText(f);
-    return text.includes("gambia") &&
-      (text.includes("river") || text.includes("gambia"));
+  const features=collection.features||[];
+  const candidates=features.filter(f=>{
+    const p=featureText(f);
+    return p.includes("gambia")&&p.includes("river");
   });
-  if(!candidates.length) return null;
-
-  // Prefer a feature whose name is specifically the Gambia River.
   candidates.sort((a,b)=>{
-    const ta=getPropertiesText(a), tb=getPropertiesText(b);
-    const score=t=>(
-      (/gambia river/.test(t)?100:0) +
-      (/river gambia/.test(t)?80:0) +
-      (/gambia/.test(t)?20:0)
-    );
-    return score(tb)-score(ta);
+    const score=t=>(/gambia river/.test(t)?100:0)+
+      (/river gambia/.test(t)?80:0);
+    return score(featureText(b))-score(featureText(a));
   });
-  return candidates[0];
+  return candidates[0]||null;
+}
+
+function removeRiverLayers(){
+  if(riverLayer)map.removeLayer(riverLayer);
+  if(riverHalo)map.removeLayer(riverHalo);
+  waves.forEach(w=>map.removeLayer(w));
+  waves=[];
+  riverLayer=null;
+  riverHalo=null;
 }
 
 function setRiverFromFeature(feature){
-  const lines = extractLines(feature.geometry)
-    .map(cleanCoords)
-    .filter(line=>line.length>=2);
+  const lines=extractLines(feature.geometry)
+    .map(cleanCoords).filter(line=>line.length>=2);
 
-  if(!lines.length) throw new Error("The river feature contains no usable line geometry.");
+  if(!lines.length)throw new Error("No usable line geometry in the selected river feature.");
 
-  // Keep the longest available line; do not join disconnected tributaries
-  // into an invented single line.
-  lines.sort((a,b)=>lineLength(b)-lineLength(a));
-  const mainLine = lines[0];
+  // Keep the longest connected line. Do not invent links between branches.
+  lines.sort((a,b)=>lengthOfLine(b)-lengthOfLine(a));
+  const coords=lines[0];
 
-  // GeoJSON is [longitude, latitude]; Leaflet needs [latitude, longitude].
-  lineLatLngs = mainLine.map(p=>[p[1],p[0]]);
+  // GeoJSON coordinates are [longitude, latitude].
+  lineLatLngs=coords.map(p=>[p[1],p[0]]);
 
-  // Orient the line approximately from its eastern/upstream end
-  // towards the western Atlantic outlet.
-  if(lineLatLngs[0][1] < lineLatLngs[lineLatLngs.length-1][1]){
+  // Orient the line broadly from east/upstream to west/downstream.
+  if(lineLatLngs[0][1]<lineLatLngs[lineLatLngs.length-1][1]){
     lineLatLngs.reverse();
   }
 
-  cumulative = [0];
-  totalKm = 0;
+  cumulative=[0];
+  totalKm=0;
   for(let i=1;i<lineLatLngs.length;i++){
-    totalKm += haversineKm(lineLatLngs[i-1],lineLatLngs[i]);
+    totalKm+=haversineKm(lineLatLngs[i-1],lineLatLngs[i]);
     cumulative.push(totalKm);
   }
 
-  if(riverLayer) map.removeLayer(riverLayer);
-  if(riverHalo) map.removeLayer(riverHalo);
-  waves.forEach(w=>map.removeLayer(w));
-  waves=[];
+  removeRiverLayers();
 
-  riverHalo = L.polyline(lineLatLngs,{
+  riverHalo=L.polyline(lineLatLngs,{
     color:"#55d5ff",weight:12,opacity:.65,
     lineCap:"round",lineJoin:"round"
   }).addTo(map);
 
-  riverLayer = L.polyline(lineLatLngs,{
+  riverLayer=L.polyline(lineLatLngs,{
     color:"#087bd0",weight:5,opacity:.98,
     lineCap:"round",lineJoin:"round"
   }).addTo(map);
 
-  riverBounds = riverLayer.getBounds();
-  estuaryPoint = lineLatLngs[lineLatLngs.length-1];
+  riverBounds=riverLayer.getBounds();
+  estuaryPoint=lineLatLngs[lineLatLngs.length-1];
 
   L.circleMarker(lineLatLngs[0],{
     radius:5,color:"#fff",weight:2,fillColor:"#14845b",fillOpacity:1
@@ -419,94 +436,83 @@ function setRiverFromFeature(feature){
 
   L.circleMarker(estuaryPoint,{
     radius:7,color:"#fff",weight:2,fillColor:"#f2a72f",fillOpacity:1
-  }).addTo(map).bindPopup("Downstream end of selected mapped line — confirm against a detailed river dataset");
+  }).addTo(map).bindPopup("Downstream end of selected line — verify outlet location");
 
-  document.getElementById("routeLength").textContent =
+  document.getElementById("routeLength").textContent=
     totalKm.toLocaleString(undefined,{maximumFractionDigits:1})+" km (line geometry)";
+
   map.fitBounds(riverBounds.pad(.08));
   createWaves();
 
-  const properties = feature.properties || {};
-  const featureName = properties.name || properties.NAME ||
-    properties.RIVER_NAME || "Gambia River feature";
-  setStatus("River geometry loaded: "+featureName);
+  const p=feature.properties||{};
+  const name=p.name||p.NAME||p.RIVER_NAME||"Gambia River feature";
+  setStatus("River geometry loaded: "+name);
   document.getElementById("animStatus").textContent="Playing";
-  updateIndicators();
 }
 
 async function loadRiver(){
   pause();
-  setStatus("Requesting mapped river geometry…");
+  setStatus("Requesting river line from external service…");
+
   try{
-    const url =
-      "https://services.arcgis.com/o6oETlrWetREI1A2/ArcGIS/rest/services/Major_Africa_Rivers/FeatureServer/1/query" +
+    const url=
+      "https://services.arcgis.com/o6oETlrWetREI1A2/ArcGIS/rest/services/Major_Africa_Rivers/FeatureServer/1/query"+
       "?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=geojson";
 
-    const response = await fetch(url);
-    if(!response.ok) throw new Error("River service returned HTTP "+response.status);
+    const response=await fetch(url);
+    if(!response.ok)throw new Error("River service returned HTTP "+response.status);
 
-    const data = await response.json();
-    let feature = chooseGambiaFeature(data);
+    const data=await response.json();
+    if(!data.features)throw new Error("Service response did not contain GeoJSON features.");
 
-    // If filtering by attributes failed, inspect the service's records
-    // and try the known major-river name fields.
-    if(!feature){
-      const list=(data.features||[]);
-      feature=list.find(f=>{
-        const p=f.properties||{};
-        const values=Object.values(p).map(v=>String(v).toLowerCase());
-        return values.some(v=>v==="gambia" || v==="gambia river" || v==="river gambia");
-      }) || null;
-    }
+    const feature=chooseGambiaFeature(data);
+    if(!feature)throw new Error("No feature named Gambia River was found in this service response.");
 
-    if(!feature){
-      throw new Error("No Gambia River feature was identified in the service response. Check the source fields or use a verified river GeoJSON.");
-    }
     setRiverFromFeature(feature);
     resume();
   }catch(error){
-    console.error(error);
-    setStatus("Could not load river geometry: "+error.message,true);
+    console.error("River geometry loading error:",error);
+    setStatus("River geometry unavailable: "+error.message,true);
     document.getElementById("animStatus").textContent="Unavailable";
     document.getElementById("distance").textContent="N/A";
-    alert("The river service did not return a usable Gambia River line.\n\n"+error.message+
-      "\n\nTry again with internet access, or load a verified detailed Gambia River GeoJSON from a hosted source.");
   }
 }
 
+// ------------------------------------------------------------
+// ANIMATION AND DISTANCE ALONG THE LOADED LINE
+// ------------------------------------------------------------
 function pointAtDistance(distance){
-  if(lineLatLngs.length<2 || totalKm<=0) return null;
+  if(lineLatLngs.length<2||totalKm<=0)return null;
   const d=Math.max(0,Math.min(totalKm,distance));
   let i=1;
-  while(i<cumulative.length-1 && cumulative[i]<d) i++;
-  const seg=cumulative[i]-cumulative[i-1];
-  const t=seg===0?0:(d-cumulative[i-1])/seg;
-  const a=lineLatLngs[i-1], b=lineLatLngs[i];
+  while(i<cumulative.length-1&&cumulative[i]<d)i++;
+  const segment=cumulative[i]-cumulative[i-1];
+  const t=segment===0?0:(d-cumulative[i-1])/segment;
+  const a=lineLatLngs[i-1],b=lineLatLngs[i];
   return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
 }
 
 function createWaves(){
   waves.forEach(w=>map.removeLayer(w));
   waves=[];
-  if(lineLatLngs.length<2) return;
+  if(lineLatLngs.length<2)return;
+
   const count=Number(document.getElementById("waveCount").value);
   for(let i=0;i<count;i++){
-    waves.push(L.circleMarker(lineLatLngs[0],{
+    const marker=L.circleMarker(lineLatLngs[0],{
       radius:7,color:"#fff",weight:2,fillColor:"#f2a72f",fillOpacity:1
-    }).addTo(map).bindTooltip("Illustrative wave marker"));
+    }).addTo(map);
+    marker.bindTooltip("Illustrative wave marker");
+    waves.push(marker);
   }
-  updateIndicators();
 }
 
-function updateIndicators(){
-  if(!totalKm || !waves.length) return;
+function updateProgress(){
+  if(!totalKm||!waves.length)return;
   const duration=18000;
   const progress=(elapsedMs%duration)/duration;
-  const frontDistance=progress*totalKm;
-  const remaining=totalKm-frontDistance;
-
   document.getElementById("distance").textContent=
-    Math.round(remaining).toLocaleString()+" km";
+    Math.round(totalKm*(1-progress)).toLocaleString()+" km";
   document.getElementById("progressText").textContent=
     Math.round(progress*100)+"%";
   document.getElementById("progressBar").style.width=
@@ -515,18 +521,19 @@ function updateIndicators(){
 
 function tick(timestamp){
   if(!running){frameId=null;return;}
-  if(!previousTimestamp) previousTimestamp=timestamp;
+  if(!previousTimestamp)previousTimestamp=timestamp;
   const delta=Math.min(100,timestamp-previousTimestamp);
   previousTimestamp=timestamp;
-  elapsedMs += delta*Number(document.getElementById("speed").value);
+  elapsedMs+=delta*Number(document.getElementById("speed").value);
 
   const duration=18000;
   waves.forEach((marker,i)=>{
     const f=((elapsedMs/duration)+(i/waves.length))%1;
     const point=pointAtDistance(f*totalKm);
-    if(point) marker.setLatLng(point);
+    if(point)marker.setLatLng(point);
   });
-  updateIndicators();
+
+  updateProgress();
   frameId=requestAnimationFrame(tick);
 }
 
@@ -535,12 +542,12 @@ function resume(){
   previousTimestamp=0;
   document.getElementById("play").textContent="Pause animation";
   document.getElementById("animStatus").textContent="Playing";
-  if(frameId===null) frameId=requestAnimationFrame(tick);
+  if(frameId===null)frameId=requestAnimationFrame(tick);
 }
 
 function pause(){
   running=false;
-  if(frameId!==null) cancelAnimationFrame(frameId);
+  if(frameId!==null)cancelAnimationFrame(frameId);
   frameId=null;
   previousTimestamp=0;
   document.getElementById("play").textContent="Play animation";
@@ -550,39 +557,50 @@ function pause(){
 document.getElementById("play").addEventListener("click",()=>running?pause():resume());
 document.getElementById("waveCount").addEventListener("change",createWaves);
 document.getElementById("reloadRiver").addEventListener("click",loadRiver);
+
 document.getElementById("fitRiver").addEventListener("click",()=>{
-  if(riverBounds) map.fitBounds(riverBounds.pad(.08));
+  if(riverBounds)map.fitBounds(riverBounds.pad(.08));
 });
+
 document.getElementById("zoomMouth").addEventListener("click",()=>{
-  if(estuaryPoint) map.setView(estuaryPoint,10);
+  if(estuaryPoint)map.setView(estuaryPoint,10);
 });
+
 document.getElementById("reset").addEventListener("click",()=>{
   elapsedMs=0;
-  if(riverBounds) map.fitBounds(riverBounds.pad(.08));
+  if(riverBounds)map.fitBounds(riverBounds.pad(.08));
   createWaves();
   resume();
 });
 
+// ------------------------------------------------------------
+// TIMELINE SLIDER
+// ------------------------------------------------------------
 document.getElementById("timeline").addEventListener("input",function(){
   document.getElementById("dayValue").textContent=this.value;
 });
 
+// ------------------------------------------------------------
+// MANUAL WATER LEVEL AND DISCHARGE INPUTS
+// ------------------------------------------------------------
 document.getElementById("apply").addEventListener("click",()=>{
   const level=document.getElementById("level").value.trim();
   const discharge=document.getElementById("discharge").value.trim();
-  if(level!=="" && (!Number.isFinite(Number(level))||Number(level)<0)){
+
+  if(level!==""&&(!Number.isFinite(Number(level))||Number(level)<0)){
     alert("Enter a valid non-negative water level.");return;
   }
-  if(discharge!=="" && (!Number.isFinite(Number(discharge))||Number(discharge)<0)){
+  if(discharge!==""&&(!Number.isFinite(Number(discharge))||Number(discharge)<0)){
     alert("Enter a valid non-negative discharge.");return;
   }
+
   document.getElementById("levelOut").textContent=level===""?"N/A":
     Number(level).toLocaleString(undefined,{maximumFractionDigits:2});
   document.getElementById("dischargeOut").textContent=discharge===""?"N/A":
     Number(discharge).toLocaleString(undefined,{maximumFractionDigits:2});
+
   document.getElementById("obsStatus").textContent=
-    (level===""&&discharge==="")?
-    "No readings entered.":
+    level===""&&discharge===""?"No readings entered.":
     "Manual readings displayed. Confirm station, timestamp, units and source.";
 });
 
@@ -594,14 +612,139 @@ document.getElementById("clear").addEventListener("click",()=>{
   document.getElementById("obsStatus").textContent="No verified observations entered.";
 });
 
+// ------------------------------------------------------------
+// WAVE TIMELINE CANVAS
+// ------------------------------------------------------------
+function drawWaveTimeline(){
+  const canvas=document.getElementById("waveTimeline");
+  if(!canvas)return;
+
+  const ctx=canvas.getContext("2d");
+  const rect=canvas.getBoundingClientRect();
+  if(!rect.width||!rect.height)return;
+
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(rect.width*dpr);
+  canvas.height=Math.round(rect.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const w=rect.width,h=rect.height;
+  const margin={left:43,right:10,top:12,bottom:34};
+  const plotW=w-margin.left-margin.right;
+  const plotH=h-margin.top-margin.bottom;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#fbfdff";
+  ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#fff";
+  ctx.fillRect(margin.left,margin.top,plotW,plotH);
+
+  ctx.font="10px Arial";
+  ctx.textAlign="right";
+  ctx.textBaseline="middle";
+  ctx.strokeStyle="#e1e9f0";
+  ctx.lineWidth=1;
+
+  [0,150,300,450,600].forEach(km=>{
+    const y=margin.top+plotH*(1-km/600);
+    ctx.beginPath();
+    ctx.moveTo(margin.left,y);
+    ctx.lineTo(margin.left+plotW,y);
+    ctx.stroke();
+    ctx.fillStyle="#62768a";
+    ctx.fillText(String(km),margin.left-7,y);
+  });
+
+  const labels=["Day 1","Day 84","Day 168","Day 252","Day 336"];
+  ctx.textAlign="center";
+  ctx.textBaseline="top";
+
+  labels.forEach((label,i)=>{
+    const x=margin.left+plotW*i/(labels.length-1);
+    ctx.beginPath();
+    ctx.moveTo(x,margin.top);
+    ctx.lineTo(x,margin.top+plotH);
+    ctx.stroke();
+    ctx.fillStyle="#62768a";
+    ctx.fillText(label,x,margin.top+plotH+7);
+  });
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(margin.left,margin.top,plotW,plotH);
+  ctx.clip();
+
+  // Deterministic conceptual bands, not measured events.
+  const bands=[
+    {start:.02,slope:.24,width:.055},
+    {start:.23,slope:.19,width:.065},
+    {start:.45,slope:.25,width:.05},
+    {start:.66,slope:.17,width:.06}
+  ];
+
+  bands.forEach((band,i)=>{
+    const x1=margin.left+band.start*plotW;
+    const x2=x1+plotW*.43;
+    const y1=margin.top+plotH*(.91-i*.14);
+    const y2=y1-plotH*band.slope;
+
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.lineTo(x2,y2+plotH*band.width);
+    ctx.lineTo(x1,y1+plotH*band.width);
+    ctx.closePath();
+
+    ctx.fillStyle=[
+      "rgba(8,123,208,.20)",
+      "rgba(37,172,220,.22)",
+      "rgba(8,123,208,.15)",
+      "rgba(37,172,220,.19)"
+    ][i];
+    ctx.fill();
+  });
+
+  ctx.restore();
+
+  ctx.fillStyle="#40576c";
+  ctx.font="10px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText("Timeline index (illustrative)",margin.left+plotW/2,h-5);
+
+  ctx.save();
+  ctx.translate(10,margin.top+plotH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText("Distance from estuary (km)",0,0);
+  ctx.restore();
+
+  ctx.fillStyle="rgba(8,123,208,.25)";
+  ctx.fillRect(margin.left+4,margin.top+4,13,8);
+  ctx.fillStyle="#52687d";
+  ctx.textAlign="left";
+  ctx.textBaseline="top";
+  ctx.fillText("Conceptual band",margin.left+21,margin.top+3);
+}
+
+requestAnimationFrame(drawWaveTimeline);
+window.addEventListener("resize",drawWaveTimeline);
+
+if("ResizeObserver" in window){
+  const canvas=document.getElementById("waveTimeline");
+  if(canvas)new ResizeObserver(drawWaveTimeline).observe(canvas);
+}
+
 map.on("mousemove",e=>{
   document.getElementById("coords").textContent=
     "Lat: "+e.latlng.lat.toFixed(4)+" | Lon: "+e.latlng.lng.toFixed(4);
 });
+
 window.addEventListener("resize",()=>map.invalidateSize());
 setTimeout(()=>map.invalidateSize(),250);
 
+// Start by loading the external river geometry.
 loadRiver();
 </script>
 </body>
 </html>
+
